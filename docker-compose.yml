@@ -15,6 +15,11 @@ services:
     build: ./Login-Hub-Interface
     ports:
       - ${LOGIN_HUB_PORT}:${LOGIN_HUB_PORT}
+    environment:
+      GATEWAY_INTERNAL_URL: ${GATEWAY_INTERNAL_URL:?Set GATEWAY_INTERNAL_URL in the parent .env}
+      HUB_PUBLIC_ORIGIN: ${HUB_PUBLIC_ORIGIN:?Set HUB_PUBLIC_ORIGIN in the parent .env}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:?Set AUTH_COOKIE_SECURE in the parent .env}
+      AUTH_PENDING_TTL_SECONDS: ${AUTH_PENDING_TTL_SECONDS:-600}
     volumes:
       - ./Login-Hub-Interface:/app
       - /app/node_modules

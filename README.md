@@ -20,29 +20,27 @@ cp .env.example .env
 git submodule update --init --recursive
 ```
 
-## DESPUÉS DE CREAR LOS SUB MÓDULOS INGRESAR A CADA UNO Y REALIZAR LO SIGUIENTE
+## CONFIGURACIÓN DE LOS FRONTENDS
 
-4. Crear un .env basado en su propio .env. example y llenar las variables de entorno correspondientes para cada sub módulo o proyecto frontend
+4. En desarrollo con el Compose del launcher, la configuración compartida se toma del `.env` raíz y se inyecta explícitamente en cada contenedor. No es necesario crear un `.env` dentro de cada submódulo para este modo.
 
-```
+Las claves de herramienta son fijas en Compose:
+
+- Hub: `hub`
+- Beneficiary: `beneficiary`
+- Sales: `sales`
+- Collections: `collections`
+
+`GATEWAY_INTERNAL_URL` es una dirección server-to-server. `HUB_PUBLIC_ORIGIN` y los orígenes públicos de herramientas deben ser alcanzables por el navegador. No se deben usar secretos en variables `NEXT_PUBLIC_*`.
+
+Para ejecutar una interfaz de forma independiente, copiar su propia plantilla y ajustar los valores:
+
+```sh
 cd Beneficiary-Interface
-```
-
-```
 cp .env.example .env
 ```
 
-Configurar las variables de entorno correspondientes y salir `cd ..`
-
-```
-cd Login-Hub-Interface
-```
-
-```
-cp .env.example .env
-```
-
-Configurar las variables de entorno correspondientes y salir `cd ..`
+Repetir solamente para la interfaz que se ejecutará fuera del Compose.
 
 ## DESPUÉS DE CONFIGURAR TODAS LOS .ENVS LEVANTAR CON DOCKER PARA VERSIÓN DEV - DESARROLLO
 
@@ -52,12 +50,35 @@ Configurar las variables de entorno correspondientes y salir `cd ..`
 docker compose build --no-cache && docker compose up
 ```
 
-## DESPUÉS DE CONFIGURAR TODAS LOS .ENVS LEVANTAR CON DOCKER PARA VERSIÓN PROD - PRODUCCIÓN
+## PRODUCCIÓN
 
-5. Comando para construir las imágenes y levantar los contenedores en producción
+Crear un archivo separado para producción:
 
+```sh
+cp .env.production.template .env.production
 ```
-docker compose -f docker-compose.prod.yml build --no-cache && docker compose -f docker-compose.prod.yml up -d
+
+Antes de construir:
+
+- usar orígenes públicos HTTPS;
+- establecer `AUTH_COOKIE_SECURE=true`;
+- configurar `GATEWAY_INTERNAL_URL` con una URL HTTPS alcanzable desde los contenedores;
+- verificar que los cuatro orígenes públicos coincidan con DNS o proxy;
+- no reutilizar el `.env` de desarrollo.
+
+Las variables `NEXT_PUBLIC_*` se entregan como argumentos de build porque Next.js las incorpora al bundle. Las variables de autenticación y destinos del Hub se entregan solamente al runtime del servidor.
+
+Validar primero la interpolación sin levantar servicios:
+
+```sh
+docker compose --env-file .env.production -f docker-compose.prod.yml config --quiet
+```
+
+Después construir y levantar:
+
+```sh
+docker compose --env-file .env.production -f docker-compose.prod.yml build --no-cache
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d
 ```
 
 ## ////////////////////////////////////

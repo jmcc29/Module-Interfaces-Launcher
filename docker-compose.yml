@@ -4,6 +4,12 @@ services:
     build: ./Beneficiary-Interface
     ports:
       - ${BENEFICIARY_PORT}:${BENEFICIARY_PORT}
+    environment:
+      GATEWAY_INTERNAL_URL: ${GATEWAY_INTERNAL_URL:?Set GATEWAY_INTERNAL_URL in the parent .env}
+      HUB_PUBLIC_ORIGIN: ${HUB_PUBLIC_ORIGIN:?Set HUB_PUBLIC_ORIGIN in the parent .env}
+      AUTH_TOOL_KEY: beneficiary
+      NEXT_PUBLIC_DEPLOY_ENV: ${NEXT_PUBLIC_DEPLOY_ENV:-dev}
+      NEXT_PUBLIC_BIOMETRIC_PORT: ${NEXT_PUBLIC_BIOMETRIC_PORT:-8899}
     volumes:
       - ./Beneficiary-Interface:/app
       - /app/node_modules
@@ -20,6 +26,11 @@ services:
       HUB_PUBLIC_ORIGIN: ${HUB_PUBLIC_ORIGIN:?Set HUB_PUBLIC_ORIGIN in the parent .env}
       AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:?Set AUTH_COOKIE_SECURE in the parent .env}
       AUTH_PENDING_TTL_SECONDS: ${AUTH_PENDING_TTL_SECONDS:-600}
+      AUTH_TOOL_KEY: hub
+      NEXT_PUBLIC_DEPLOY_ENV: ${NEXT_PUBLIC_DEPLOY_ENV:-dev}
+      BENEFICIARY_PUBLIC_ORIGIN: ${BENEFICIARY_PUBLIC_ORIGIN:?Set BENEFICIARY_PUBLIC_ORIGIN in the parent .env}
+      SALES_PUBLIC_ORIGIN: ${SALES_PUBLIC_ORIGIN:?Set SALES_PUBLIC_ORIGIN in the parent .env}
+      COLLECTIONS_PUBLIC_ORIGIN: ${COLLECTIONS_PUBLIC_ORIGIN:?Set COLLECTIONS_PUBLIC_ORIGIN in the parent .env}
     volumes:
       - ./Login-Hub-Interface:/app
       - /app/node_modules
@@ -31,6 +42,11 @@ services:
     build: ./Sales-Interface
     ports:
       - ${SALES_PORT}:${SALES_PORT}
+    environment:
+      GATEWAY_INTERNAL_URL: ${GATEWAY_INTERNAL_URL:?Set GATEWAY_INTERNAL_URL in the parent .env}
+      HUB_PUBLIC_ORIGIN: ${HUB_PUBLIC_ORIGIN:?Set HUB_PUBLIC_ORIGIN in the parent .env}
+      AUTH_TOOL_KEY: sales
+      NEXT_PUBLIC_DEPLOY_ENV: ${NEXT_PUBLIC_DEPLOY_ENV:-dev}
     volumes:
       - ./Sales-Interface:/app
       - /app/node_modules
@@ -42,6 +58,11 @@ services:
     build: ./Collections-Interface
     ports:
       - ${COLLECTIONS_PORT}:${COLLECTIONS_PORT}
+    environment:
+      GATEWAY_INTERNAL_URL: ${GATEWAY_INTERNAL_URL:?Set GATEWAY_INTERNAL_URL in the parent .env}
+      HUB_PUBLIC_ORIGIN: ${HUB_PUBLIC_ORIGIN:?Set HUB_PUBLIC_ORIGIN in the parent .env}
+      AUTH_TOOL_KEY: collections
+      NEXT_PUBLIC_DEPLOY_ENV: ${NEXT_PUBLIC_DEPLOY_ENV:-dev}
     volumes:
       - ./Collections-Interface:/app
       - /app/node_modules

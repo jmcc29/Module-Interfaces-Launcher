@@ -33,6 +33,10 @@ Las claves de herramienta son fijas en Compose:
 
 `GATEWAY_INTERNAL_URL` es una dirección server-to-server. `HUB_PUBLIC_ORIGIN` y los orígenes públicos de herramientas deben ser alcanzables por el navegador. No se deben usar secretos en variables `NEXT_PUBLIC_*`.
 
+Compose define defaults para los puertos `3001` a `3004`, binding OIDC de `600` segundos y puerto biométrico `8899`. Desarrollo fija cookies no seguras y `NEXT_PUBLIC_DEPLOY_ENV=dev`; producción fija cookies seguras y `NEXT_PUBLIC_DEPLOY_ENV=prod`. Para cambiar un default se descomenta su override en la plantilla raíz y se recrea el servicio afectado. Si se cambia `AUTH_PENDING_TTL_SECONDS`, debe mantenerse igual a `WEB_PENDING_TTL_SECONDS` en Auth-Service.
+
+Los `.env` internos de cada submódulo se usan solamente al ejecutar esa interfaz fuera del Compose. Compose usa exclusivamente el `.env` raíz del launcher, evitando dos fuentes distintas para una misma variable.
+
 Para ejecutar una interfaz de forma independiente, copiar su propia plantilla y ajustar los valores:
 
 ```sh
@@ -61,7 +65,7 @@ cp .env.production.template .env.production
 Antes de construir:
 
 - usar orígenes públicos HTTPS;
-- establecer `AUTH_COOKIE_SECURE=true`;
+- confirmar que `docker-compose.prod.yml` mantiene `AUTH_COOKIE_SECURE=true`;
 - configurar `GATEWAY_INTERNAL_URL` con una URL HTTPS alcanzable desde los contenedores;
 - verificar que los cuatro orígenes públicos coincidan con DNS o proxy;
 - no reutilizar el `.env` de desarrollo.

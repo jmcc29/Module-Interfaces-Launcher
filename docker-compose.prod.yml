@@ -5,13 +5,13 @@ services:
       context: ./Beneficiary-Interface
       dockerfile: dockerfile.prod
       args:
-        NEXT_PUBLIC_DEPLOY_ENV: ${NEXT_PUBLIC_DEPLOY_ENV:-prod}
+        NEXT_PUBLIC_DEPLOY_ENV: prod
         NEXT_PUBLIC_BIOMETRIC_PORT: ${NEXT_PUBLIC_BIOMETRIC_PORT:-8899}
     ports:
-      - ${BENEFICIARY_PORT}:${BENEFICIARY_PORT}
+      - ${BENEFICIARY_PORT:-3002}:${BENEFICIARY_PORT:-3002}
     environment:
       NODE_ENV: production
-      PORT: ${BENEFICIARY_PORT}
+      PORT: ${BENEFICIARY_PORT:-3002}
       HOSTNAME: 0.0.0.0
       GATEWAY_INTERNAL_URL: ${GATEWAY_INTERNAL_URL:?Set GATEWAY_INTERNAL_URL in the parent .env}
       HUB_PUBLIC_ORIGIN: ${HUB_PUBLIC_ORIGIN:?Set HUB_PUBLIC_ORIGIN in the parent .env}
@@ -23,16 +23,16 @@ services:
       context: ./Login-Hub-Interface
       dockerfile: dockerfile.prod
       args:
-        NEXT_PUBLIC_DEPLOY_ENV: ${NEXT_PUBLIC_DEPLOY_ENV:-prod}
+        NEXT_PUBLIC_DEPLOY_ENV: prod
     ports:
-      - ${LOGIN_HUB_PORT}:${LOGIN_HUB_PORT}
+      - ${LOGIN_HUB_PORT:-3001}:${LOGIN_HUB_PORT:-3001}
     environment:
       NODE_ENV: production
-      PORT: ${LOGIN_HUB_PORT}
+      PORT: ${LOGIN_HUB_PORT:-3001}
       HOSTNAME: 0.0.0.0
       GATEWAY_INTERNAL_URL: ${GATEWAY_INTERNAL_URL:?Set GATEWAY_INTERNAL_URL in the parent .env}
       HUB_PUBLIC_ORIGIN: ${HUB_PUBLIC_ORIGIN:?Set HUB_PUBLIC_ORIGIN in the parent .env}
-      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:?Set AUTH_COOKIE_SECURE in the parent .env}
+      AUTH_COOKIE_SECURE: "true"
       AUTH_PENDING_TTL_SECONDS: ${AUTH_PENDING_TTL_SECONDS:-600}
       AUTH_TOOL_KEY: hub
       BENEFICIARY_PUBLIC_ORIGIN: ${BENEFICIARY_PUBLIC_ORIGIN:?Set BENEFICIARY_PUBLIC_ORIGIN in the parent .env}
@@ -45,12 +45,12 @@ services:
       context: ./Sales-Interface
       dockerfile: dockerfile.prod
       args:
-        NEXT_PUBLIC_DEPLOY_ENV: ${NEXT_PUBLIC_DEPLOY_ENV:-prod}
+        NEXT_PUBLIC_DEPLOY_ENV: prod
     ports:
-      - ${SALES_PORT}:${SALES_PORT}
+      - ${SALES_PORT:-3003}:${SALES_PORT:-3003}
     environment:
       NODE_ENV: production
-      PORT: ${SALES_PORT}
+      PORT: ${SALES_PORT:-3003}
       HOSTNAME: 0.0.0.0
       GATEWAY_INTERNAL_URL: ${GATEWAY_INTERNAL_URL:?Set GATEWAY_INTERNAL_URL in the parent .env}
       HUB_PUBLIC_ORIGIN: ${HUB_PUBLIC_ORIGIN:?Set HUB_PUBLIC_ORIGIN in the parent .env}
@@ -62,12 +62,12 @@ services:
       context: ./Collections-Interface
       dockerfile: dockerfile.prod
       args:
-        NEXT_PUBLIC_DEPLOY_ENV: ${NEXT_PUBLIC_DEPLOY_ENV:-prod}
+        NEXT_PUBLIC_DEPLOY_ENV: prod
     ports:
-      - ${COLLECTIONS_PORT}:${COLLECTIONS_PORT}
+      - ${COLLECTIONS_PORT:-3004}:${COLLECTIONS_PORT:-3004}
     environment:
       NODE_ENV: production
-      PORT: ${COLLECTIONS_PORT}
+      PORT: ${COLLECTIONS_PORT:-3004}
       HOSTNAME: 0.0.0.0
       GATEWAY_INTERNAL_URL: ${GATEWAY_INTERNAL_URL:?Set GATEWAY_INTERNAL_URL in the parent .env}
       HUB_PUBLIC_ORIGIN: ${HUB_PUBLIC_ORIGIN:?Set HUB_PUBLIC_ORIGIN in the parent .env}

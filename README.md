@@ -22,29 +22,49 @@ git submodule update --init --recursive
 
 ## CONFIGURACIÓN DE LOS FRONTENDS
 
-4. En desarrollo con el Compose del launcher, la configuración compartida se toma del `.env` raíz y se inyecta explícitamente en cada contenedor. No es necesario crear un `.env` dentro de cada submódulo para este modo.
+4. El `.env` raíz pertenece únicamente al launcher y conserva la responsabilidad original de definir los puertos publicados:
 
-Las claves de herramienta son fijas en Compose:
-
-- Hub: `hub`
-- Beneficiary: `beneficiary`
-- Sales: `sales`
-- Collections: `collections`
-
-`GATEWAY_INTERNAL_URL` es una dirección server-to-server. `HUB_PUBLIC_ORIGIN` y los orígenes públicos de herramientas deben ser alcanzables por el navegador. No se deben usar secretos en variables `NEXT_PUBLIC_*`.
-
-Compose define defaults para los puertos `3001` a `3004`, binding OIDC de `600` segundos y puerto biométrico `8899`. Desarrollo fija cookies no seguras y `NEXT_PUBLIC_DEPLOY_ENV=dev`; producción fija cookies seguras y `NEXT_PUBLIC_DEPLOY_ENV=prod`. Para cambiar un default se descomenta su override en la plantilla raíz y se recrea el servicio afectado. Si se cambia `AUTH_PENDING_TTL_SECONDS`, debe mantenerse igual a `WEB_PENDING_TTL_SECONDS` en Auth-Service.
-
-Los `.env` internos de cada submódulo se usan solamente al ejecutar esa interfaz fuera del Compose. Compose usa exclusivamente el `.env` raíz del launcher, evitando dos fuentes distintas para una misma variable.
-
-Para ejecutar una interfaz de forma independiente, copiar su propia plantilla y ajustar los valores:
-
-```sh
-cd Beneficiary-Interface
-cp .env.example .env
+```env
+LOGIN_HUB_PORT=3001
+BENEFICIARY_PORT=3002
+SALES_PORT=3003
+COLLECTIONS_PORT=3004
 ```
 
-Repetir solamente para la interfaz que se ejecutará fuera del Compose.
+Cada frontend administra su propio `.env` con las variables que necesita. Esto permite ejecutar un proyecto desde el launcher o de manera independiente con la misma configuración. Antes de levantar el launcher, crear los archivos locales a partir de sus plantillas:
+
+```sh
+cp Login-Hub-Interface/.env.example Login-Hub-Interface/.env
+cp Beneficiary-Interface/.env.example Beneficiary-Interface/.env
+cp Sales-Interface/.env.example Sales-Interface/.env
+cp Collections-Interface/.env.example Collections-Interface/.env
+```
+
+En desarrollo, las carpetas de los proyectos se montan en `/app` y Next.js carga directamente el `.env` de cada frontend. El Compose no duplica esas variables.
+
+Las variables compartidas, como `GATEWAY_INTERNAL_URL` y `HUB_PUBLIC_ORIGIN`, se repiten intencionalmente. Así cada repositorio puede apuntar a un backend diferente y continúa siendo autónomo. Las variables específicas permanecen solamente donde corresponden:
+
+- Hub configura cookies, binding OIDC y los orígenes de las herramientas.
+- Beneficiary configura el puerto del servicio biométrico.
+- Cada frontend declara su propia `AUTH_TOOL_KEY` y `NEXT_PUBLIC_DEPLOY_ENV`.
+- `AUTH_PENDING_TTL_SECONDS` es opcional y usa `600` segundos si se omite. Si se define, debe coincidir con `WEB_PENDING_TTL_SECONDS` en Auth-Service.
+
+### Dependencias para trabajar por proyecto
+
+No es necesario levantar todos los frontends:
+
+- Para desarrollar un frontend con autenticación y datos reales se requieren el Hub, el frontend objetivo, Gateway, Auth-Service, Redis, Keycloak, NATS y los microservicios funcionales consumidos por esa herramienta.
+- Para trabajar solamente en el Hub se requieren Gateway, Auth-Service, Redis, Keycloak y NATS. Los demás frontends solo son necesarios al probar el ingreso efectivo a sus herramientas.
+- Para trabajar en componentes visuales sin autenticación ni datos reales puede ejecutarse solamente el frontend.
+
+Tampoco es obligatorio levantar todos los backends:
+
+- Las pruebas unitarias o de lógica interna pueden ejecutarse dentro del microservicio correspondiente.
+- Para probar un microservicio mediante NATS se requieren NATS y sus dependencias concretas.
+- Para probar rutas web mediante Gateway se añaden Gateway, Auth-Service, Redis y Keycloak.
+- Para una prueba desde navegador se añaden el Hub y el frontend que consume esas rutas.
+
+El backend y el frontend pueden ser levantados por personas distintas si son alcanzables por red. En ese caso, cada frontend configura `GATEWAY_INTERNAL_URL` y sus orígenes públicos en su propio `.env`.
 
 ## DESPUÉS DE CONFIGURAR TODAS LOS .ENVS LEVANTAR CON DOCKER PARA VERSIÓN DEV - DESARROLLO
 
@@ -56,34 +76,23 @@ docker compose build --no-cache && docker compose up
 
 ## PRODUCCIÓN
 
-Crear un archivo separado para producción:
+El launcher utiliza el mismo `.env` raíz para los cuatro puertos:
 
 ```sh
-cp .env.production.template .env.production
+docker compose -f docker-compose.prod.yml config --quiet
+docker compose -f docker-compose.prod.yml build --no-cache
+docker compose -f docker-compose.prod.yml up -d
 ```
 
-Antes de construir:
+No se requiere un archivo `.env.production` en el launcher. Cada frontend debe tener su propio `.env` configurado para el ambiente antes de construir:
 
-- usar orígenes públicos HTTPS;
-- confirmar que `docker-compose.prod.yml` mantiene `AUTH_COOKIE_SECURE=true`;
-- configurar `GATEWAY_INTERNAL_URL` con una URL HTTPS alcanzable desde los contenedores;
-- verificar que los cuatro orígenes públicos coincidan con DNS o proxy;
-- no reutilizar el `.env` de desarrollo.
+- `NEXT_PUBLIC_DEPLOY_ENV=prod`;
+- URLs públicas HTTPS correspondientes al entorno;
+- `AUTH_COOKIE_SECURE=true` en el Hub;
+- `GATEWAY_INTERNAL_URL` alcanzable desde el contenedor;
+- `NEXT_PUBLIC_BIOMETRIC_PORT` explícito en Beneficiary.
 
-Las variables `NEXT_PUBLIC_*` se entregan como argumentos de build porque Next.js las incorpora al bundle. Las variables de autenticación y destinos del Hub se entregan solamente al runtime del servidor.
-
-Validar primero la interpolación sin levantar servicios:
-
-```sh
-docker compose --env-file .env.production -f docker-compose.prod.yml config --quiet
-```
-
-Después construir y levantar:
-
-```sh
-docker compose --env-file .env.production -f docker-compose.prod.yml build --no-cache
-docker compose --env-file .env.production -f docker-compose.prod.yml up -d
-```
+El `dockerfile.prod` copia el proyecto y Next.js usa su `.env` durante la compilación. El Compose de producción también declara ese archivo mediante `env_file` para que las variables server side estén disponibles cuando se ejecuta el servidor standalone. Las variables `NODE_ENV`, `PORT` y `HOSTNAME` conservan el tratamiento que ya tenía `upstream/dev`.
 
 ## ////////////////////////////////////
 
